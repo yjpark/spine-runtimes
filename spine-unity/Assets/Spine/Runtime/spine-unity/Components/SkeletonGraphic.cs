@@ -49,7 +49,7 @@ namespace Spine.Unity {
 	[RequireComponent(typeof(CanvasRenderer), typeof(RectTransform)), DisallowMultipleComponent]
 	[AddComponentMenu("Spine/SkeletonGraphic (Unity UI Canvas)")]
 	[HelpURL("http://esotericsoftware.com/spine-unity#SkeletonGraphic-Component")]
-	public class SkeletonGraphic : MaskableGraphic, ISkeletonComponent, IAnimationStateComponent, ISkeletonAnimation, IHasSkeletonDataAsset {
+	public partial class SkeletonGraphic : MaskableGraphic, ISkeletonComponent, IAnimationStateComponent, ISkeletonAnimation, IHasSkeletonDataAsset {
 
 		#region Inspector
 		public SkeletonDataAsset skeletonDataAsset;
@@ -263,6 +263,7 @@ namespace Spine.Unity {
 			if (!this.IsValid) return;
 
 			wasUpdatedAfterInit = true;
+			/* yjpark change begin *
 			if (updateMode < UpdateMode.OnlyAnimationStatus)
 				return;
 
@@ -273,6 +274,19 @@ namespace Spine.Unity {
 				return;
 			}
 			ApplyAnimation();
+			 */
+			Profiling.SkeletonGraphic_Update.Begin();
+			if (updateMode >= UpdateMode.OnlyAnimationStatus) {
+				UpdateAnimationStatus(deltaTime);
+
+				if (updateMode == UpdateMode.OnlyAnimationStatus) {
+					state.ApplyEventTimelinesOnly(skeleton, issueEvents: false);
+				} else {
+					ApplyAnimation();
+				}
+			}
+			Profiling.SkeletonGraphic_Update.End();
+			/* yjpark change end */
 		}
 
 		protected void SyncSubmeshGraphicsWithCanvasRenderers () {
@@ -572,6 +586,7 @@ namespace Spine.Unity {
 		public void UpdateMesh (bool keepRendererCount = false) {
 			if (!this.IsValid) return;
 
+			Profiling.SkeletonGraphic_UpdateMesh.Begin(); //yjpark
 			skeleton.SetColor(this.color);
 
 			var currentInstructions = this.currentInstructions;
@@ -583,6 +598,7 @@ namespace Spine.Unity {
 
 			if (OnMeshAndMaterialsUpdated != null)
 				OnMeshAndMaterialsUpdated(this);
+			Profiling.SkeletonGraphic_UpdateMesh.End(); //yjpark
 		}
 
 		public bool HasMultipleSubmeshInstructions () {
@@ -624,7 +640,17 @@ namespace Spine.Unity {
 				meshGenerator.BuildMeshWithArrays(currentInstructions, updateTriangles);
 			}
 
-			if (canvas != null) meshGenerator.ScaleVertexData(canvas.referencePixelsPerUnit);
+			if (canvas != null) {
+				/* yjpark change begin
+				meshGenerator.ScaleVertexData(canvas.referencePixelsPerUnit);
+				 */
+				if (UseLocalScale) {
+					CheckLocalScale();
+				} else {
+					meshGenerator.ScaleVertexData(canvas.referencePixelsPerUnit);
+				}
+				/* yjpark change end */
+			}
 			if (OnPostProcessVertices != null) OnPostProcessVertices.Invoke(this.meshGenerator.Buffers);
 
 			var mesh = smartMesh.mesh;
@@ -661,8 +687,20 @@ namespace Spine.Unity {
 			EnsureMeshesCount(submeshCount);
 			EnsureSeparatorPartCount();
 
+			/* yjpark change begin 
 			var c = canvas;
+
 			float scale = (c == null) ? 100 : c.referencePixelsPerUnit;
+			 */
+			float scale = 100f;
+			if (UseLocalScale) {
+				CheckLocalScale();
+			} else {
+				if (canvas != null) {
+					scale = canvas.referencePixelsPerUnit;
+				}
+			}
+			/* yjpark change end */
 
 			// Generate meshes.
 			var meshesItems = meshes.Items;
@@ -690,7 +728,13 @@ namespace Spine.Unity {
 				meshGenerator.AddSubmesh(submeshInstructionItem);
 
 				Mesh targetMesh = meshesItems[i];
+				/* yjpark change begin 
 				meshGenerator.ScaleVertexData(scale);
+				 */
+				if (!UseLocalScale) {
+					meshGenerator.ScaleVertexData(scale);
+				}
+				/* yjpark change end */
 				if (OnPostProcessVertices != null) OnPostProcessVertices.Invoke(this.meshGenerator.Buffers);
 				meshGenerator.FillVertexData(targetMesh);
 				meshGenerator.FillTriangles(targetMesh);

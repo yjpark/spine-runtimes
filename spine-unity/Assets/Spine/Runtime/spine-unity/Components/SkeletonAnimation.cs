@@ -206,6 +206,7 @@ namespace Spine.Unity {
 				return;
 
 			wasUpdatedAfterInit = true;
+			/* yjpark change begin *
 			if (updateMode < UpdateMode.OnlyAnimationStatus)
 				return;
 			UpdateAnimationStatus(deltaTime);
@@ -215,6 +216,19 @@ namespace Spine.Unity {
 				return;
 			}
 			ApplyAnimation();
+			 */
+			Profiling.SkeletonAnimation_Update.Begin();
+			if (updateMode >= UpdateMode.OnlyAnimationStatus) {
+				UpdateAnimationStatus(deltaTime);
+
+				if (updateMode == UpdateMode.OnlyAnimationStatus) {
+					state.ApplyEventTimelinesOnly(skeleton, issueEvents: false);
+				} else {
+					ApplyAnimation();
+				}
+			}
+			Profiling.SkeletonAnimation_Update.End();
+			/* yjpark change end */
 		}
 
 		protected void UpdateAnimationStatus (float deltaTime) {

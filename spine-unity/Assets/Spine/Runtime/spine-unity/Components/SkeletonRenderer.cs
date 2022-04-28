@@ -455,6 +455,7 @@ namespace Spine.Unity {
 			const bool doMeshOverride = false;
 			if (!meshRenderer.enabled) return;
 #endif
+			Profiling.SkeletonAnimation_LateUpdateMesh.Begin(); //yjpark
 			var currentInstructions = this.currentInstructions;
 			var workingSubmeshInstructions = currentInstructions.submeshInstructions;
 			var currentSmartMesh = rendererBuffers.GetNextMesh(); // Double-buffer for performance.
@@ -501,7 +502,14 @@ namespace Spine.Unity {
 #if SPINE_OPTIONAL_RENDEROVERRIDE
 				if (doMeshOverride) {
 					this.generateMeshOverride(currentInstructions);
+					/* yjpark change begin *
 					if (disableRenderingOnOverride) return;
+					 */
+					if (disableRenderingOnOverride) {
+						Profiling.SkeletonAnimation_LateUpdateMesh.End();
+						return;
+					}
+					/* yjpark change end */
 				}
 #endif
 
@@ -563,6 +571,8 @@ namespace Spine.Unity {
 
 			if (OnMeshAndMaterialsUpdated != null)
 				OnMeshAndMaterialsUpdated(this);
+
+			Profiling.SkeletonAnimation_LateUpdateMesh.End(); //yjpark
 		}
 
 		public virtual void OnBecameVisible () {
