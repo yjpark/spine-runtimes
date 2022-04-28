@@ -644,9 +644,8 @@ namespace Spine.Unity {
 				/* yjpark change begin
 				meshGenerator.ScaleVertexData(canvas.referencePixelsPerUnit);
 				 */
-				if (UseLocalScale) {
-					CheckLocalScale();
-				} else {
+				CheckLocalScale();
+				if (!UseLocalScale) {
 					meshGenerator.ScaleVertexData(canvas.referencePixelsPerUnit);
 				}
 				/* yjpark change end */
@@ -693,9 +692,8 @@ namespace Spine.Unity {
 			float scale = (c == null) ? 100 : c.referencePixelsPerUnit;
 			 */
 			float scale = 100f;
-			if (UseLocalScale) {
-				CheckLocalScale();
-			} else {
+			CheckLocalScale();
+			if (!UseLocalScale) {
 				if (canvas != null) {
 					scale = canvas.referencePixelsPerUnit;
 				}
