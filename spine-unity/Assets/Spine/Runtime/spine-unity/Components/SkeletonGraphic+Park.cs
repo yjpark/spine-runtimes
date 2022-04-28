@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Spine.Unity {
 	public partial class SkeletonGraphic {
-		public static bool UseLocalScale = false;
+		public static bool UseLocalScale = true;
 		private float _LastScale = 0f;
 		private void CheckLocalScale() {
 			if (canvas == null) return;
